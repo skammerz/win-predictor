@@ -50,6 +50,7 @@ result["wr_last5_diff"] = result["wr_last5_diff"].fillna(0)
 
 columns = [
     "game_id",
+    "season",
     "home_win",
     "elo_diff",
     "elo_home_win_prob",
