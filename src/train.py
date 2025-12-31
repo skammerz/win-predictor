@@ -54,14 +54,39 @@ accuracy_elo = accuracy_score(y_test, elo_pred)
 score_always_home = log_loss(y_test, [1.0] * len(y_test))
 accuracy_always_home = accuracy_score(y_test, [1] * len(y_test))
 
-print("=== Baseline: Always Pick Home ===")
-print(f"Accuracy: {accuracy_always_home:.4f}")
-print(f"Log Loss: {score_always_home:.4f}\n")
+# save models and reports
 
-print("=== Baseline: Elo Only ===")
-print(f"Accuracy: {accuracy_elo:.4f}")
-print(f"Log Loss: {score_elo:.4f}\n")
+os.makedirs("models", exist_ok=True)
+os.makedirs("reports", exist_ok=True)
 
-print("=== Logistic Regression Model ===")
-print(f"Accuracy: {accuracy_model:.4f}")
-print(f"Log Loss: {score_model:.4f}")
+import joblib
+
+joblib.dump(clf, "models/logreg_v1.joblib")
+joblib.dump(scaler, "models/scaler_v1.joblib")
+
+import json
+
+metrics = {
+    "always_home": {
+        "accuracy": accuracy_always_home,
+        "log_loss": score_always_home
+    },
+    "elo_only": {
+        "accuracy": accuracy_elo,
+        "log_loss": score_elo
+    },
+    "logistic_regression": {
+        "accuracy": accuracy_model,
+        "log_loss": score_model
+    }
+}
+
+with open("reports/metrics_v1.json", "w") as f:
+    json.dump(metrics, f, indent=4)
+
+pred_df = test_df[["game_id", "home_win"]].copy()
+pred_df["elo_prob"] = test_df["elo_home_win_prob"]
+pred_df["model_prob"] = probabilities[:, 1]
+pred_df["model_pred"] = predictions
+
+pred_df.to_parquet("reports/test_predictions_v1.parquet", index=False)
