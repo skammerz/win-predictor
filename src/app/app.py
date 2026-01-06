@@ -1,5 +1,6 @@
 import streamlit as st
 from data_live import load_schedules_live, load_model_table, load_joblib_model, load_joblib_scaler
+from features_asof import build_features_for_game
 import pandas as pd
 import os
 
@@ -41,21 +42,26 @@ IN_PATH = os.path.join("data", "processed", "model_table.parquet")
 model_table = load_model_table(IN_PATH)
 
 game_data = model_table[model_table["game_id"] == game_id].copy()
+model = load_joblib_model()
+scaler = load_joblib_scaler()
+feature_cols = [
+    "elo_diff",
+    "elo_home_win_prob",
+    "pf_last5_diff",
+    "pa_last5_diff",
+    "pd_last5_diff",
+    "wr_last5_diff"
+]
 if game_data.empty:
-    st.write('Future game, feature not implemented yet')
+    features_live = build_features_for_game(df, game_id, n=5)
+    X = features_live[feature_cols]
+    X_scaled = scaler.transform(X)
+
+    result = model.predict_proba(X_scaled)
+    p_home = result[0, 1]
+    st.write('The model predicted ', home_team if p_home >= .5 else away_team, 
+             ' with home win probability of ', round(p_home, 2))
 else:
-    model = load_joblib_model()
-    scaler = load_joblib_scaler()
-
-    feature_cols = [
-        "elo_diff",
-        "elo_home_win_prob",
-        "pf_last5_diff",
-        "pa_last5_diff",
-        "pd_last5_diff",
-        "wr_last5_diff"
-    ]
-
     X = game_data[feature_cols]
     X_scaled = scaler.transform(X)
 
